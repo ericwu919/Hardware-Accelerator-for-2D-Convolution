@@ -1,1 +1,6 @@
-testtestsetestsete
+ESE507 Project Part 1 (status.txt)
+Partners: Eric Wu, Cody Chen
+
+Functionality:
+Our design is fully functional. There are no errors or warnings when synthesizing our design. In addition to this, when running the provided testbench for the unpipelined and pipelined MAC design, there are no errors. 
+For both the unpipelined and pipelined design, we tested that the computations were computed properly. For example, we confirmed that the multiplier and adder gave the correct output by checking based on the waveform data in our timing simulation. Since we are not dealing with overflow in Part 1, that was not taken into account. On top of this, we ensured that the appropriate data is being outputted from the flip-flop based on signal input_valid/en and init_acc.
