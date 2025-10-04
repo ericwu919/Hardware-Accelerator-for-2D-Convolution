@@ -2,5 +2,8 @@ ESE507 Project Part 1 (status.txt)
 Partners: Eric Wu, Cody Chen
 
 Functionality:
-Our design is fully functional. There are no errors or warnings when synthesizing our design. In addition to this, when running the provided testbench for the unpipelined and pipelined MAC design, there are no errors. 
-For both the unpipelined and pipelined design, we tested that the computations were computed properly. For example, we confirmed that the multiplier and adder gave the correct output by checking based on the waveform data in our timing simulation. Since we are not dealing with overflow in Part 1, that was not taken into account. On top of this, we ensured that the appropriate data is being outputted from the flip-flop based on signal input_valid/en and init_acc.
+Our designs are fully functional. We tested them by first simulating them at clock periods of 10 ns and 1 ns, where we found that the minimum clock period that doesn't violate timing constraints was closer to 1 ns. We then incremented the clock periods from 1 ns by 0.1 ns and 0.01 ns until the timing constraints are met at the lowest possible clock period.
+
+Errors:
+There are no errors or warnings when synthesizing our design. In addition to this, when running the provided testbench for the unpipelined and pipelined MAC design, there are no errors. 
+For both the unpipelined and pipelined design, we tested that the computations were done properly. For example, we confirmed that the multiplier and adder gave the correct output by manually verifying the computations based on the waveform data in our timing simulations. Since we are not dealing with overflow in Part 1, that was not taken into account. We also ensured that the appropriate data is being outputted from the flip-flop based on the signals input_valid/en and init_acc.
