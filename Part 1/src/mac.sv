@@ -1,4 +1,4 @@
-//Eric Wu, Cody Chen
+//Partners: Eric Wu, Cody Chen
 //Project: Hardware Accelerator for 2D Convolution
 //Design: Unpipelined Design for the MAC Unit
 
