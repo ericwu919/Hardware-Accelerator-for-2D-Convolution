@@ -1,3 +1,7 @@
+//Eric Wu, Cody Chen
+//Project: Hardware Accelerator for 2D Convolution
+//Design: Unpipelined Design for the MAC Unit
+
 module mac #(
         parameter INW = 16,
         parameter OUTW = 64
@@ -35,6 +39,3 @@ module mac #(
             out <= sum;
     end 
 endmodule
-
-//module testbench();
-
