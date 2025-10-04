@@ -1,3 +1,7 @@
+//Partners: Eric Wu, Cody Chen
+//Project: Hardware Accelerator for 2D Convolution
+//Design: Pipelined Design for the MAC Unit
+
 module mac_pipe #(
         parameter INW = 16,
         parameter OUTW = 64
@@ -49,3 +53,4 @@ module mac_pipe #(
     end 
 
 endmodule
+
