@@ -2,7 +2,7 @@ ESE507 Project Part 1 (status.txt)
 Partners: Eric Wu, Cody Chen
 
 Functionality:
-Our designs are fully functional. We tested them by first simulating them at clock periods of 10 ns and 1 ns, where we found that the minimum clock period that doesn't violate timing constraints was closer to 1 ns. We then incremented the clock periods from 1 ns by 0.1 ns and 0.01 ns until the timing constraints are met at the lowest possible clock period.
+Our designs are fully functional. We tested them by first simulating them at clock periods of 10 ns and 1 ns, where we found that the minimum clock period that doesn't violate timing constraints was closer to 1 ns. We then incremented the clock periods from 1 ns by 0.1 ns and 0.01 ns until the timing constraints are met at the lowest possible clock period. For the pipelined design, that is 1.19 ns and for the unpipelined design, that is 1.41 ns.
 
 Errors:
 There are no errors or warnings when synthesizing our design. In addition to this, when running the provided testbench for the unpipelined and pipelined MAC design, there are no errors. 
