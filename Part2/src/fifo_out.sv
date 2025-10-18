@@ -21,26 +21,27 @@ module fifo_out #(
 		input OUT_AXIS_TREADY
 	);
 	
-	integer unsigned [LOGDEPTH-1:0] count;	//for keeping count of the number of entries in the FIFO
+	integer unsigned [LOGDEPTH-1:0] capacity;	//for keeping track of the number of entries in the FIFO
+	logic [LOGDEPTH-1:0] write_address, read_address;	//read & write addresses to be sent to the memory
 	
 	//Head (Write Address) Logic
 	always_ff @(posedge clk) begin
 		
 		if (reset == 1) begin
-			//reset count to 0
-			count <= 0;	
+			//reset capacity to 0
+			capacity <= 0;	
 			
-		else	//unasserted reset
+		end else begin	//unasserted reset
 			
-			if (count == DEPTH)	//FIFO is full
+			if (capacity == 0)	//FIFO is full; no space for new data
 				IN_AXIS_TREADY <= 0;
 			
-			else	//FIFO has space for new data to be written
+			end else begin	//FIFO has space for new data to be written
 				IN_AXIS_TREADY <= 1;
 				
 				if (IN_AXIS_TVALID == 1) begin
-					//increment count
-					count = count + 1;
+					write_address <= ;
+					
 				end	
 				
 			end			 
@@ -56,17 +57,16 @@ module fifo_out #(
 			//reset output FIFO data to all 0s
 			OUT_AXIS_TDATA <= {OUTW{1'b0}};	//OUTW bits wide	
 			
-		else	//unasserted reset
+		end else begin	//unasserted reset
 			
-			if (count == 0)	//FIFO is empty
+			if (capacity == DEPTH)	//FIFO is empty; no data to output
 				OUT_AXIS_TVALID <= 0;
 			
-			else	//FIFO is not empty; output is valid
+			end else begin	//FIFO has data to be read
 				OUT_AXIS_TVALID <= 1;
 				
 				if (OUT_AXIS_TREADY == 1) begin	 
-					//increment count
-					count = count + 1;
+					read_address <= ;
 				end	
 				
 			end			 
@@ -79,11 +79,19 @@ module fifo_out #(
 	always_ff @(posedge clk) begin
 		
 		if (reset == 1) begin
-			//reset output FIFO data to all 0s
-			OUT_AXIS_TDATA <= {OUTW{1'b0}};	//OUTW bits wide	
+			//empty the FIFO
+			capacity <= DEPTH;	
 			
-		else	//unasserted reset
-			
+		end else begin	//unasserted reset
+			if (IN_AXIS_TVALID && IN_AXIS_TREADY)
+				//write is enabled; decrement capacity
+				capacity = capacity - 1;
+				
+			else if (OUT_AXIS_TVALID && OUT_AXIS_TREADY)
+				//read is enabled; increment capacity
+				capacity = capacity + 1;
+				
+			end	
 			
 		end	
 		
