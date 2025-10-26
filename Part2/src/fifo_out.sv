@@ -19,32 +19,27 @@ module fifo_out #(
 		output logic [OUTW-1:0] OUT_AXIS_TDATA,
 		output logic OUT_AXIS_TVALID,
 		input OUT_AXIS_TREADY
-	);
+	);											 
 	
+	//Internal signals
 	integer unsigned [LOGDEPTH-1:0] capacity;	//for keeping track of the number of entries in the FIFO
-	logic [LOGDEPTH-1:0] write_address, read_address;	//read & write addresses to be sent to the memory
+	logic [LOGDEPTH-1:0] write_address, read_address;	//read & write addresses to be sent to the memory  
+	logic write_enable = IN_AXIS_TVALID && IN_AXIS_TREADY;	//write enable signal for the memory, head logic, and capacity logic
+	logic read_enable = OUT_AXIS_TVALID && OUT_AXIS_TREADY;	//read enable signal tail logic and capacity logic
+	
+	//Instantiation of the FIFO's dual-port memory
+	memory_dual_port #(OUTW, DEPTH) mem_inst(.clk(clk), .data_in(IN_AXIS_TDATA), .wr_en(write_enable), .write_addr(write_address), .read_addr(read_address), .data_out(OUT_AXIS_TDATA));	
 	
 	//Head (Write Address) Logic
 	always_ff @(posedge clk) begin
 		
-		if (reset == 1) begin
-			//reset capacity to 0
-			capacity <= 0;	
+		if (reset == 1)
+			//reset write address to 0
+			write_address <= 0;	
 			
-		end else begin	//unasserted reset
-			
-			if (capacity == 0)	//FIFO is full; no space for new data
-				IN_AXIS_TREADY <= 0;
-			
-			end else begin	//FIFO has space for new data to be written
-				IN_AXIS_TREADY <= 1;
-				
-				if (IN_AXIS_TVALID == 1) begin
-					write_address <= ;
-					
-				end	
-				
-			end			 
+		else if (write_enable == 1)
+			//increment write address
+			write_address <= write_address + 1;  
 			
 		end	
 		
@@ -59,7 +54,7 @@ module fifo_out #(
 			
 		end else begin	//unasserted reset
 			
-			if (capacity == DEPTH)	//FIFO is empty; no data to output
+			if (capacity == DEPTH) begin	//FIFO is empty; no data to output
 				OUT_AXIS_TVALID <= 0;
 			
 			end else begin	//FIFO has data to be read
@@ -83,11 +78,11 @@ module fifo_out #(
 			capacity <= DEPTH;	
 			
 		end else begin	//unasserted reset
-			if (IN_AXIS_TVALID && IN_AXIS_TREADY)
+			if (write_enable == 1)
 				//write is enabled; decrement capacity
 				capacity = capacity - 1;
 				
-			else if (OUT_AXIS_TVALID && OUT_AXIS_TREADY)
+			else if (read_enable == 1)
 				//read is enabled; increment capacity
 				capacity = capacity + 1;
 				
