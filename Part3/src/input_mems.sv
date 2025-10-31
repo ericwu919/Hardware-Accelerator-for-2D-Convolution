@@ -33,9 +33,12 @@ module input_mems #(
 		input [W_ADDR_BITS-1:0] W_read_addr,
 		output logic signed [INW-1:0] W_data
 	);
-	
+
+	// --------------------------------------------
 	// Internal signals and values
-	// Get TUSER signals
+	// --------------------------------------------
+
+	// Get TUSER signals from AXIS_TUSER
 	logic new_W;
 	assign new_W = AXIS_TUSER[0]; 
 	logic [K_BITS-1:0] TUSER_K;		// K_BITS = $clog2(MAXK+1),
@@ -46,6 +49,14 @@ module input_mems #(
 	logic signed [INW-1:0] B_reg;
 	assign K = K_reg;
 	assign B = B_reg;
+
+	//Signal to indicate data is received
+	logic data_received;
+	assign data_received = AXIS_TVALID & AXIS_TREADY;
+
+	//Internal Matrices for holding data
+	logic [INW-1:0] W[C-1:0][K_BITS-1:0];
+	logic [INW-1:0] X[R-1:0][K_BITS-1:0];
 
 	// Counters for position in matrices
 	logic [W_ADDR_BITS-1:0] w_write_address_counter;	// W_ADDR_BITS = $clog2(MAXK*MAXK)
@@ -83,23 +94,46 @@ module input_mems #(
 	// --------------------------------------------
 	// Phase 1: Input W Matrix
 	// --------------------------------------------
+	// Notes: 	Take in W matrix via AXIS
+	// 			Stored in W memory
+	//			Store K during 1st cycle of stage
+	//			Phase complete AFTER entire W matrix is loaded (K*K values)
+	//			Skipped if new_W == 0; jump to "Input X Matrix" (phase 3)
+	// --------------------------------------------
 	
-/* 	always_ff @(posedge clk) begin
+	// W counter logic
+	// W memory write enable logic
+	always_ff @(posedge clk) begin
 		if (reset) begin
+			w_mem_write_en <= 1'b0;
+		end else begin
+			w_mem_write_en <= (current_state == input_W) && AXIS_TVALID; && AXIS_TREADY;
+		end
+	end
+
+	// W memory address logic
+	always_ff @(posedge clk) begin
+		if (reset) begin
+			w_mem_addr <= 0;
+		end else begin
+			
+		end
+	end
+
+
+	// K register logic (get K on first cycle of stage)
+	always_ff @(posedge clk) begin
+		if (reset) 
 			//reset the W matrix data to all 0s
 			w_mem_data_in <= '0;
-			
-		end else if (new_W == 0)
+		else if (new_W == 0)
 			//exit this phase and go to Phase 3: Input X Matrix
 			next_state = ;
 		else
 
 
-		end
-			
-				
-			
-	end */
+	end
+
 	
 	// --------------------------------------------
 	// Phase 2: Input B (Bias)
@@ -149,17 +183,47 @@ module input_mems #(
 
 	//FSM output logic
 	always_comb begin
-		if (current_state == IDLE)
-			w_mem_data_in <= '0;
-			x_mem_data_in <= '0;
+		if (current_state == IDLE) begin
+			w_mem_data_in = '0;
+			x_mem_data_in = '0;
+			AXIS_TREADY = 1;	//system is ready to receive new inputs
+
+		end else if (current_state == INPUT_W) begin
+			if (data_received == 1) begin	//system has received data that is ready to be inputted into matrix
+				if (new_W == 1) begin
+					//input data represents first value of W matrix; otherwise, the old W matrix is used
+					W[0][0] = w_mem_data_in;
+					K = TUSER_K;
+				end
+
+			end	
+
+		end else if (current_state == INPUT_B) begin
+			B = B_reg;
+
+		end else if (current_state == INPUT_X) begin	
+
+		end else if (current_state == INPUTS_LOADED) begin	
+			if (compute_finished == 1) begin
+				//exit phase and reset inputs_loaded to 0
+				inputs_loaded = 0;
+				
+			end else begin
+				inputs_loaded = 1;	//will remain 1 while in this phase
+				AXIS_TREADY = 0;	//system is not ready to receive new inputs
+
+				//Read data from each memory read interface based on the read addresses
+				x_mem_data_out = X[X_read_addr];
+				w_mem_data_out = W[W_read_addr];
+			end	
+		end	
 
 	end	
 
-	//FSM next state logic
+	// FSM next state logic - I don't think we should be checking reset 
+	// here because it is always_comb
 	always_comb begin
-		if (reset)
-			next_state = IDLE;
-		else if (current_state == IDLE)
+		if (current_state == IDLE)
 			next_state = (reset == 1) ? IDLE : INPUT_W; 
 		else if (current_state == INPUT_W)
 			next_state = (new_W == 0) ? INPUT_X : INPUT_B;
@@ -168,15 +232,15 @@ module input_mems #(
 		else if (current_state == INPUT_X)
 			next_state = INPUTS_LOADED;
 		else if (current_state == INPUTS_LOADED)
-			next_state = IDLE;					
-
+			next_state = IDLE;
 	end
+	
 
 	//FSM state register
 	always_ff @(posedge clk) begin
 		if (reset == 1)
-			//reset to Phase 1: Input W Matrix
-			current_state <= INPUT_W;
+			//reset to IDLE phase
+			current_state <= IDLE;
 
 		else
 			//continue to next state specified in combinational next state logic
