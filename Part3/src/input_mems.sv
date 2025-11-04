@@ -54,32 +54,28 @@ module input_mems #(
 	logic data_received;
 	assign data_received = AXIS_TVALID & AXIS_TREADY;
 
-	//Internal Matrices for holding data
-	// I don't think we should use 2D array, but also the dimension is wrong
-	// for W it should be [MAXK-1:0][MAXK-1:0]
-	// the reason why i say that is because the memory module won't be able to see these
-	logic [INW-1:0] W[MAXK-1:0][MAXK-1:0];
-	logic [INW-1:0] X[R-1:0][K_BITS-1:0];
-
 	// Counters for position in matrices
 	logic [W_ADDR_BITS-1:0] w_write_address_counter;	// W_ADDR_BITS = $clog2(MAXK*MAXK)
 	logic [X_ADDR_BITS-1:0] x_write_address_counter;	// X_ADDR_BITS = $clog2(R*C)
 
 	// Memory signals | Connect memory data inputs and outputs
 	// Probably shouldn't use these, just load into memory
+/*
 	logic [INW-1:0] x_mem_data_in, w_mem_data_in;
 	assign x_mem_data_in = AXIS_TDATA;
 	assign w_mem_data_in = AXIS_TDATA;
 	logic [INW-1:0] x_mem_data_out, w_mem_data_out;
 	assign X_data = x_mem_data_out;
 	assign W_data = w_mem_data_out;
-	
+*/	
 	// Tells if first data transfer in IDLE state
 	logic first_cycle;
 	
 	logic [X_ADDR_BITS-1:0] x_mem_addr;	
 	logic [W_ADDR_BITS-1:0] w_mem_addr;
 	logic x_mem_write_en, w_mem_write_en;
+
+	assign inputs_loaded = (current_state == INPUTS_LOADED);
 
 	// FSM States
 	typedef enum logic [2:0] {
@@ -93,71 +89,72 @@ module input_mems #(
 	state_t current_state, next_state;
 
 	// Instantiate X memory
-	// might need to change to x_mem_addr for .addr
-	memory #(INW, R*C) X_mem_inst(.data_in(x_mem_data_in), .data_out(x_mem_data_out), .addr(X_read_addr), .clk(clk), .wr_en(x_mem_write_en));
+	memory #(INW, R*C) X_mem_inst(.data_in(AXIS_TDATA), .data_out(X_data), .addr(x_mem_addr), .clk(clk), .wr_en(x_mem_write_en));
 
 	// Instantiate W memory
-	// might need to change to w_mem_addr for .addr
-	memory #(INW, MAXK*MAXK) W_mem_inst(.data_in(w_mem_data_in), .data_out(w_mem_data_out), .addr(W_read_addr), .clk(clk), .wr_en(w_mem_write_en));
-	
-	/*		 
-	
-	// W counter logic
-	// W memory write enable logic
-	always_ff @(posedge clk) begin
-		if (reset) begin
-			w_mem_write_en <= 0;
-		end else begin
-			w_mem_write_en <= (current_state == input_W) && (data_received == 1);
-		end
-	end
+	memory #(INW, MAXK*MAXK) W_mem_inst(.data_in(AXIS_TDATA), .data_out(W_data), .addr(w_mem_addr), .clk(clk), .wr_en(w_mem_write_en));
 
-	// W memory address logic
+	// ----------------------------------------------------
+	// Counter and register logic
+	// ----------------------------------------------------
 	always_ff @(posedge clk) begin
 		if (reset) begin
-			w_mem_addr <= 0;
+			w_write_address_counter <= 0;
+			x_write_address_counter <= 0;
+			K_reg <= 0;
+			B_reg <= 0;
+			first_cycle <= 1;
 		end else begin
-			
+			case (current_state)
+				IDLE: begin
+					// Reset counters and first_cycle flag when returning to IDLE
+					w_write_address_counter <= 0;
+					x_write_address_counter <= 0;
+					first_cycle <= 1;
+
+					// load K register
+					if (data_received && first_cycle) begin
+						first_cycle <= 0;
+						if (new_W) begin
+							K_reg <= TUSER_K;
+						end
+						// If new_W = 0, we are not updating W, so K_reg remains unchanged
+					end
+				end
+				INPUT_W: begin
+					if (data_received) begin
+						// Incremenet the counter for the W memory address on each valid transfer
+						if (w_write_address_counter < K_reg * K_reg - 1) begin
+							w_write_address_counter <= w_write_address_counter + 1;
+						end else begin
+							w_write_address_counter <= 0;
+						end
+					end
+				end
+				INPUT_B: begin
+					if (data_received) begin
+						B_reg <= AXIS_TDATA;
+					end
+				end
+				INPUT_X: begin
+					// Increment the counter for the X memory address on each valid transfer
+					if (data_received) begin
+						if (x_write_address_counter < R * C - 1) begin
+							x_write_address_counter <= x_write_address_counter + 1;
+						end else begin
+							x_write_address_counter <= 0;
+						end
+					end
+				end
+				default: begin
+					// If we are in the IDLE state, we are going to reset the counters
+					w_write_address_counter <= 0;
+					x_write_address_counter <= 0;
+					first_cycle <= 1;
+				end
+			endcase
 		end
-	end	
-	
-	// Control for AXIS_TREADY
-	// I don't think this is necessary since this is determined by FSM output logic
-	always_comb begin
-		case (current_state)
-			IDLE: AXIS_TREADY = 1;	//ready to receive new inputs
-			INPUT_W: AXIS_TREADY = 1;	//ready to receive W matrix inputs
-			INPUT_B: AXIS_TREADY = 1;	//ready to receive B input
-			INPUT_X: AXIS_TREADY = 1;	//ready to receive X matrix inputs
-			INPUTS_LOADED: AXIS_TREADY = 0;	//not ready to receive new inputs
-			default: AXIS_TREADY = 0;
-		endcase
 	end
-	*/
-	
-	// K register logic (get K on first cycle of stage)
-	always_ff @(posedge clk) begin
-		if (reset) 
-			//reset K register to all 0s
-			K_reg <= '0;
-		else if (new_W == 1)	//new W matrix means new K value
-			//load value of K into K register
-			K_reg <= TUSER_K;
-			
-		//Note: if new_W = 0, the associated K value of the old W matrix will be used 	
-	end
-	
-	// B register logic
-	always_ff @(posedge clk) begin
-		if (reset)
-			//reset B register to all 0s
-			B_reg <= '0;
-		else if (new_W == 1)	//new W matrix requires a new B value to be stored
-			//store scalar data value from AXI-Stream input interface into B register
-			B_reg <= AXIS_TDATA;
-			
-		//Note: if new_W = 0, the B value previously stored in memory will be used	
-	end	
 	
 	// Choosing which address to use for memory write operations
 	always_comb begin
@@ -172,10 +169,25 @@ module input_mems #(
 		end
 	end
 
+	always_comb begin
+		case (current_state)
+			IDLE, INPUT_W, INPUT_B, INPUT_X: begin
+				AXIS_TREADY = 1;	// System is ready to receive new inputs
+			end
+			INPUTS_LOADED: begin
+				AXIS_TREADY = 0;	// System is not ready to receive new inputs
+			end
+			default: begin
+				AXIS_TREADY = 0;
+			end
+		endcase
+	end
+
 	// Memory write enable 
 	always_comb begin
 		if (data_received) begin
 			case (current_state)
+			// have to take into account the idle state
 				INPUT_W: w_mem_write_en = 1;
 				INPUT_X: x_mem_write_en = 1;
 				default: begin
@@ -189,37 +201,10 @@ module input_mems #(
 		end
 	end
 	
-	// Sequential logic for keeping track of memory write addresses
-	always_ff @(posedge clk) begin
-		if (reset) begin
-			w_write_address_counter <= 0;
-			x_write_address_counter <= 0;
-		end else begin
-			case (current_state)
-				IDLE: begin
-					w_write_address_counter <= 0;
-					x_write_address_counter <= 0;
-					
-					if (data_received && first_cycle) begin
-						first_cycle <= 0;
-						if (new_W) begin
-							K_reg <= TUSER_K;	//store K value
-						end
-					end else if (!data_received) begin
-						//stay in IDLE state
-						first_cycle <= 1;
-					end
-				end
-				INPUT_W: begin
-					if (data_received
-			endcase
-		end
-	end
-	
 	// ----------------------------------------------------
 	// FSM logic for the operations of each phase
 	// ----------------------------------------------------
-	
+/*
 	//FSM output logic
 	always_comb begin
 
@@ -244,14 +229,12 @@ module input_mems #(
 
 		end else if (current_state == INPUT_W) begin
 			//only executes if new_W = 1; input data represents first value of W matrix	
-				
+
 			K = K_reg;	//output K comes from K register
 
-			//load W matrix
-			for (int i = 0; i < K_reg; i++) begin
-				for (int j = 0; j < K_reg; j++) begin
-					W[i][j] = w_mem_data_in;
-				end	
+			//load W matrix into W memory
+			for (int i = 0; i < K_reg * K_reg; i++) begin
+				w_mem_data_out = w_mem_data_in;
 			end	
 			//Note: if new_W = 0, the input data will instead represent the first value of the X matrix, 
 			//and the old W matrix will be used
@@ -268,11 +251,9 @@ module input_mems #(
 		// --------------------------------------------
 
 		end else if (current_state == INPUT_X) begin	
-			//load X matrix
-			for (int i = 0; i < R; i++) begin
-				for (int j = 0; j < C; j++) begin
-					X[i][j] = x_mem_data_in;
-				end	
+			//load X matrix into X memory
+			for (int i = 0; i < R*C; i++) begin
+				x_mem_data_out = x_mem_data_in;
 			end
 
 		// --------------------------------------------
@@ -305,37 +286,74 @@ module input_mems #(
 		end	
 
 	end	
-
+*/
 	// FSM next state logic
 	always_comb begin
-		//IDLE state
-		if (current_state == IDLE)		  
-			
-			if (data_received == 0)
-				//stays in IDLE state if system has not yet received data that is ready to be inputted into a matrix;
+		next_state = current_state;
+
+		AXIS_TREADY = 0;
+		x_mem_write_en = 0;
+		w_mem_write_en = 0;
+		x_mem_addr = x_write_address_counter;
+		w_mem_addr = w_write_address_counter;
+
+		if (inputs_loaded) begin
+			x_mem_addr = X_read_addr;
+			w_mem_addr = W_read_addr;
+		end else begin
+			x_mem_addr = x_write_address_counter;
+			w_mem_addr = w_write_address_counter;
+		end
+
+		case (current_state)		  
+			IDLE: begin
+				AXIS_TREADY = 1;	//system is ready to receive new inputs
+				if (data_received == 0)
+					//stays in IDLE state if system has not yet received data that is ready to be inputted into a matrix;
+					next_state = IDLE;
+				else if (new_W == 1)
+					//moves to INPUT_W state when system has received data and new_W = 1 (update W matrix)
+					next_state = INPUT_W;
+				else
+					//moves to INPUT_X state if system has received data and new_W = 0 (old W matrix is being used)
+					next_state = INPUT_X;			    
+			end
+			INPUT_W: begin
+				AXIS_TREADY = 1;	//system is ready to receive new inputs
+				if (data_received) begin
+					w_mem_write_en = 1;
+					if (w_write_address_counter == K_reg * K_reg - 1) begin
+						next_state = INPUT_B;
+					end
+				end
+			end
+			INPUT_B: begin
+				AXIS_TREADY = 1;	//system is ready to receive new inputs
+				if (data_received) begin
+					next_state = INPUT_X;
+				end
+			end
+			INPUT_X: begin
+				AXIS_TREADY = 1;	//system is ready to receive new inputs
+				if (data_received) begin
+					x_mem_write_en = 1;
+					if (x_write_address_counter == R * C - 1) begin
+						next_state = INPUTS_LOADED;
+					end
+				end
+			end
+			INPUTS_LOADED: begin
+				AXIS_TREADY = 0;	//system is not ready to receive new inputs
+				if (compute_finished) begin
+					// next_state = IDLE;? and then get rid of else statement
+					next_state = IDLE;
+				end
+			end
+			default: begin
+				AXIS_TREADY = 0;
 				next_state = IDLE;
-			else if (new_W == 1)
-				//moves to INPUT_W state when system has received data and new_W = 1 (update W matrix)
-				next_state = INPUT_W;
-			else
-				//moves to INPUT_X state if system has received data and new_W = 0 (old W matrix is being used)
-				next_state = INPUT_X;			    
-		
-		//INPUT_W state		
-		else if (current_state == INPUT_W)
-			next_state = INPUT_B;
-			
-		//INPUT_B state		
-		else if (current_state == INPUT_B)
-			next_state = INPUT_X;
-			
-		//INPUT_X state		
-		else if (current_state == INPUT_X)
-			next_state = INPUTS_LOADED;
-			
-		//INPUTS_LOADED state		
-		else if (current_state == INPUTS_LOADED)
-			next_state = (compute_finished == 1) ? IDLE : INPUTS_LOADED;
+			end
+		endcase
 	end
 
 	//FSM state register
