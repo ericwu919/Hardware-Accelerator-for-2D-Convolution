@@ -3,33 +3,25 @@
 //Design: Input Memory Module
 
 module input_mems #(
-		parameter INW = 10,	//Size of data
-		parameter R = 15,	//Number of rows in of input matrix X, where R >= 3
-		parameter C = 13,	//Number of columns of input matrix X, where C >= 3
-		parameter MAXK = 7,	//maximum value of K allowed by system	
+		parameter INW = 24,
+		parameter R = 9,
+		parameter C = 8,
+		parameter MAXK = 4,
 		localparam K_BITS = $clog2(MAXK+1),
 		localparam X_ADDR_BITS = $clog2(R*C),
 		localparam W_ADDR_BITS = $clog2(MAXK*MAXK)
 	)(
-		input clk, reset,	//System clock & reset
-	
-		//AXIS input interface for X, W, and B
-		input [INW-1:0] AXIS_TDATA,	//input data
+		input clk, reset,
+		input [INW-1:0] AXIS_TDATA,
 		input AXIS_TVALID,
-		input [K_BITS:0] AXIS_TUSER, //bits $clog2(MAXK+1):1 provide value of K while W[0][0] is being loaded, bit 0 is a control bit for the matrix to be represented 
+		input [K_BITS:0] AXIS_TUSER,
 		output logic AXIS_TREADY,
-		
-		//AXIS output interface signals and values
-		output logic inputs_loaded,	//inputs_loaded = 1 when the module's internal memories hold complete X and W matrices and correct & valid values of K and B
-		input compute_finished,		//used to indicate when the system is finished computing the convolution on the matrices stored in memory
-		output logic [K_BITS-1:0] K,	//'K' value of weight matrix W currently stored in memory, such that 2 <= K <= MAXK
-		output logic signed [INW-1:0] B,	//convolution bias value
-		
-		//AXIS output interface to read data from the X memory 
+		output logic inputs_loaded,
+		input compute_finished,
+		output logic [K_BITS-1:0] K,
+		output logic signed [INW-1:0] B,
 		input [X_ADDR_BITS-1:0] X_read_addr,
 		output logic signed [INW-1:0] X_data,
-		
-		//AXIS output interface to read data from the W memory
 		input [W_ADDR_BITS-1:0] W_read_addr,
 		output logic signed [INW-1:0] W_data
 	);
@@ -41,7 +33,7 @@ module input_mems #(
 	// Get TUSER signals from AXIS_TUSER
 	logic new_W;
 	assign new_W = AXIS_TUSER[0]; 
-	logic [K_BITS-1:0] TUSER_K;
+	logic [K_BITS-1:0] TUSER_K;		// K_BITS = $clog2(MAXK+1),
 	assign TUSER_K = AXIS_TUSER[K_BITS:1];
 	
 	// Registers for K and B | Connect K and B outputs
@@ -55,12 +47,10 @@ module input_mems #(
 	assign data_received = AXIS_TVALID & AXIS_TREADY;
 
 	// Counters for position in matrices
-	logic [W_ADDR_BITS-1:0] w_write_address_counter;
-	logic [X_ADDR_BITS-1:0] x_write_address_counter;
-
-	// Tells if first data transfer in IDLE state
-	logic first_cycle;
+	logic [W_ADDR_BITS-1:0] w_write_address_counter;	// W_ADDR_BITS = $clog2(MAXK*MAXK)
+	logic [X_ADDR_BITS-1:0] x_write_address_counter;	// X_ADDR_BITS = $clog2(R*C)
 	
+	// Where to write in memory
 	logic [X_ADDR_BITS-1:0] x_mem_addr;	
 	logic [W_ADDR_BITS-1:0] w_mem_addr;
 	logic x_mem_write_en, w_mem_write_en;
@@ -93,7 +83,6 @@ module input_mems #(
 			x_write_address_counter <= 0;
 			K_reg <= 0;
 			B_reg <= 0;
-			//first_cycle <= 1;
 		end else begin
 			case (current_state)
 				IDLE: begin
@@ -135,7 +124,6 @@ module input_mems #(
 
 	// FSM next state logic
 	always_comb begin
-		// Default values
 		next_state = current_state;
 		AXIS_TREADY = 0;
 		x_mem_write_en = 0;
@@ -216,5 +204,4 @@ module input_mems #(
 			//continue to next state specified in combinational next state logic
 			current_state <= next_state;
 	end	
-
-endmodule
+endmodule	
