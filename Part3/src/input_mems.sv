@@ -3,10 +3,10 @@
 //Design: Input Memory Module
 
 module input_mems #(
-		parameter INW = 24,	//Size of data
-		parameter R = 9,	//Number of rows in of input matrix X, where R >= 3
-		parameter C = 8,	//Number of columns of input matrix X, where C >= 3
-		parameter MAXK = 4,	//maximum value of K allowed by system	
+		parameter INW = 10,	//Size of data
+		parameter R = 15,	//Number of rows in of input matrix X, where R >= 3
+		parameter C = 13,	//Number of columns of input matrix X, where C >= 3
+		parameter MAXK = 7,	//maximum value of K allowed by system	
 		localparam K_BITS = $clog2(MAXK+1),
 		localparam X_ADDR_BITS = $clog2(R*C),
 		localparam W_ADDR_BITS = $clog2(MAXK*MAXK)
@@ -93,30 +93,17 @@ module input_mems #(
 			x_write_address_counter <= 0;
 			K_reg <= 0;
 			B_reg <= 0;
-			first_cycle <= 1;
+			//first_cycle <= 1;
 		end else begin
 			case (current_state)
 				IDLE: begin
-					// Reset counters when in IDLE
-					w_write_address_counter <= 0;
-					x_write_address_counter <= 0;
-
 					// Load K register and handle first W or X element
-					if (data_received && first_cycle) begin
-						first_cycle <= 0;
-						if (new_W) begin
-							K_reg <= TUSER_K;
-							// Start W counter at 1 since we're writing W[0] in IDLE
-							w_write_address_counter <= 1;
-						end else begin
-							// Start X counter at 1 since we're writing X[0] in IDLE
-							x_write_address_counter <= 0;
-						end
-					end
-					
-					// Reset first_cycle when leaving IDLE
-					if (next_state != IDLE) begin
-						first_cycle <= 1;
+					if (data_received && new_W) begin //first_cycle) begin
+						K_reg <= TUSER_K;
+						// Start W counter at 1 since we're writing W[0] in IDLE
+						w_write_address_counter <= 1;
+					end else if (data_received && !new_W) begin
+						x_write_address_counter <= 1;
 					end
 				end
 				INPUT_W: begin
@@ -134,6 +121,12 @@ module input_mems #(
 					// Increment the counter for the X memory address on each valid transfer
 					if (data_received) begin
 						x_write_address_counter <= x_write_address_counter + 1;
+					end
+				end
+				INPUTS_LOADED: begin
+					if(compute_finished) begin
+						w_write_address_counter <= 0;
+						x_write_address_counter <= 0;
 					end
 				end
 			endcase
