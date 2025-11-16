@@ -31,32 +31,59 @@ module Conv #(
     logic [INW-1:0] X_data_sent, W_data_sent, B_data_sent;
     logic [K_BITS-1:0] K_data_sent;
 
+    logic initAccCtrl;  //signal for the init_acc value that goes into the MAC
     logic readyCompute; //signal to indicate data matrices stored in memory are complete and are ready for computation in the MAC unit
     logic [OUTW-1:0] computedData;  //data from the MAC to the Output FIFO
 
     /*Note: If FIFO is full (IN_AXIS_TREADY == 0), MAC must stall until there is space in the FIFO to store the computed data*/
 
     logic finished;   //signal to indicate the full convolution is completed (FIFO is empty)
-    assign finished = !OUTPUT_TVALID;
     
 
     /*-----------------------------------------Instantiations of Input Memories, Pipelined MAC, and Output FIFO modules-----------------------------------------*/
     input_mems inputMems_inst #(INW, R, C, MAXK) (.clk(clk), .reset(reset), .AXIS_TDATA(INPUT_TDATA), .AXIS_TUSER(INPUT_TUSER), .AXIS_TVALID(INPUT_TVALID), .AXIS_TREADY(INPUT_TREADY), 
-    .X_read_addr(), .X_data(X_data_sent), .W_read_addr(), .W_data(W_data_sent), .inputs_loaded(readyCompute), .compute_finished(finished), .K(K_data_sent), .B(B_data_sent));
+    .X_read_addr(x_addr), .X_data(X_data_sent), .W_read_addr(w_addr), .W_data(W_data_sent), .inputs_loaded(readyCompute), .compute_finished(finished), .K(K_data_sent), .B(B_data_sent));
 
-    mac_pipe macPipe_inst #(INW, OUTW) (.clk(clk), .reset(reset), .input0(X_data_sent), .input1(W_data_sent), .input_valid(readyCompute), .init_value(B_data_sent), .init_acc(INPUT_TUSER[0]), .out(computedData));
+    mac_pipe macPipe_inst #(INW, OUTW) (.clk(clk), .reset(reset), .input0(X_data_sent), .input1(W_data_sent), .input_valid(readyCompute), .init_value(B_data_sent), .init_acc(), .out(computedData));
 
-    fifo_out fifoOut_inst #(OUTW, C-1) (.clk(clk), .reset(reset), .IN_AXIS_TDATA(computedData), .IN_AXIS_TVALID(INPUT_TVALID), .IN_AXIS_TREADY(INPUT_TREADY), 
+    fifo_out fifoOut_inst #(OUTW, C-1) (.clk(clk), .reset(reset), .IN_AXIS_TDATA(computedData), .IN_AXIS_TVALID(), .IN_AXIS_TREADY(), 
     .OUT_AXIS_TDATA(OUTPUT_TDATA), .OUT_AXIS_TVALID(OUTPUT_TVALID), .OUT_AXIS_TREADY(OUTPUT_TREADY));
 
-    //Combinational logic that controls the read addresses of the X and W matrices
+    /*-----------------------------------------Top level module control logic-----------------------------------------*/
+    //Control logic for reading X and W input data from the input memories and feeding them 
+    //(and value of B) into the MAC module by controlling their respective read addresses
     always_comb begin : addr_control
+        //X matrix address
+        if (x_addr == R*C) begin
+            x_addr = 0;
+        else
+            //matrices are stored in row-major order
+            x_addr = x_addr + 1;
+        end
 
-    end
+        //W matrix address
+        if (w_addr == MAXK*MAXK) begin
+            w_addr = 0;
+        else
+            //matrices are stored in row-major order
+            w_addr = w_addr + 1;
+        end
+    end 
 
-    //Main execution of 2D Convolution
-    always_ff @(posedge clk) begin : main
+    //Control logic for the MAC modules' control inputs (init_acc , init_value, input_valid)
+    always_comb begin : mac_control
+        readyCompute = (inputs_loaded) ? 1 : 0;
         
-    end
+    end 
+
+    //Control logic for the FIFO's IN_AXIS_TVALID and IN_AXIS_TREADY input interface ports
+    always_comb begin : fifo_control
+
+    end 
+
+    //Control logic for the state of compute_finished input port in the input memory module
+    always_comb begin : finished_control
+        finished = !OUTPUT_TVALID;
+    end    
 
 endmodule    
