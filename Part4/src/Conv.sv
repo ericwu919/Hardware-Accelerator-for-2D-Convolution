@@ -36,49 +36,75 @@ module Conv #(
     logic [OUTW-1:0] computedData;  //data from the MAC to the Output FIFO
 
     /*Note: If FIFO is full (IN_AXIS_TREADY == 0), MAC must stall until there is space in the FIFO to store the computed data*/
+    logic fifo_load_valid;
+    logic fifo_load_ready;
 
     logic finished;   //signal to indicate the full convolution is completed (FIFO is empty)
     
+    /*------------------------------------State machine for keeping track of the top level's operation------------------------------------*/
+    typedef enum logic [2:0] { 
+        IDLE,
+        INPUT_MEMORY,
+        MAC_COMPUTE,
+        FIFO
+    } state_t;
 
     /*-----------------------------------------Instantiations of Input Memories, Pipelined MAC, and Output FIFO modules-----------------------------------------*/
     input_mems inputMems_inst #(INW, R, C, MAXK) (.clk(clk), .reset(reset), .AXIS_TDATA(INPUT_TDATA), .AXIS_TUSER(INPUT_TUSER), .AXIS_TVALID(INPUT_TVALID), .AXIS_TREADY(INPUT_TREADY), 
     .X_read_addr(x_addr), .X_data(X_data_sent), .W_read_addr(w_addr), .W_data(W_data_sent), .inputs_loaded(readyCompute), .compute_finished(finished), .K(K_data_sent), .B(B_data_sent));
 
-    mac_pipe macPipe_inst #(INW, OUTW) (.clk(clk), .reset(reset), .input0(X_data_sent), .input1(W_data_sent), .input_valid(readyCompute), .init_value(B_data_sent), .init_acc(), .out(computedData));
+    mac_pipe macPipe_inst #(INW, OUTW) (.clk(clk), .reset(reset), .input0(X_data_sent), .input1(W_data_sent), .input_valid(), .init_value(B_data_sent), .init_acc(), .out(computedData));
 
-    fifo_out fifoOut_inst #(OUTW, C-1) (.clk(clk), .reset(reset), .IN_AXIS_TDATA(computedData), .IN_AXIS_TVALID(), .IN_AXIS_TREADY(), 
+    fifo_out fifoOut_inst #(OUTW, C-1) (.clk(clk), .reset(reset), .IN_AXIS_TDATA(computedData), .IN_AXIS_TVALID(fifo_load_valid), .IN_AXIS_TREADY(fifo_load_ready), 
     .OUT_AXIS_TDATA(OUTPUT_TDATA), .OUT_AXIS_TVALID(OUTPUT_TVALID), .OUT_AXIS_TREADY(OUTPUT_TREADY));
 
     /*-----------------------------------------Top level module control logic-----------------------------------------*/
     //Control logic for reading X and W input data from the input memories and feeding them 
     //(and value of B) into the MAC module by controlling their respective read addresses
     always_comb begin : addr_control
-        //X matrix address
-        if (x_addr == R*C) begin
-            x_addr = 0;
-        else
-            //matrices are stored in row-major order
-            x_addr = x_addr + 1;
-        end
+        //Only executes when inputs_loaded from the input memory module is asserted
+        if (readyCompute) begin
+            /*use R, C, and K values to determine value of x_addr and w_addr (corresponding values are indexed relative to K)*/
 
-        //W matrix address
-        if (w_addr == MAXK*MAXK) begin
-            w_addr = 0;
-        else
-            //matrices are stored in row-major order
-            w_addr = w_addr + 1;
+            //X matrix address
+            if (x_addr == R*C) begin    //limited to size R*C
+                x_addr = 0;
+            else
+                //matrices are stored in row-major order
+                x_addr = x_addr + 1;
+            end
+
+            //W matrix address
+            if (w_addr == K_data_sent * K_data_sent) begin  //limited to size K*K (defined as a part of the AXIS_TUSER input)
+                w_addr = 0;
+            else
+                //matrices are stored in row-major order
+                w_addr = w_addr + 1;
+            end
         end
     end 
 
-    //Control logic for the MAC modules' control inputs (init_acc , init_value, input_valid)
+    //Control logic for the MAC modules' control inputs (init_acc, init_value, input_valid)
     always_comb begin : mac_control
-        readyCompute = (inputs_loaded) ? 1 : 0;
+        //inputs_loaded must be 1 in order to execute
+        //init_acc = 0 -> load product of input0 and input1 into register, otherwise load init_value
+        if (readyCompute) begin
+            initAccCtrl = ;
+        end 
         
     end 
 
     //Control logic for the FIFO's IN_AXIS_TVALID and IN_AXIS_TREADY input interface ports
     always_comb begin : fifo_control
+        //only load into FIFO if it has space for data
+        if (fifo_load_ready) begin
+            if (fifo_load_valid) begin  //valid output data from MAC 
 
+            else
+
+            end    
+
+        end
     end 
 
     //Control logic for the state of compute_finished input port in the input memory module
