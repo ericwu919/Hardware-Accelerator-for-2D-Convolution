@@ -29,7 +29,7 @@
             Inclusivity and Diversity" (Refer to article 000036315 at
                         https://solvnetplus.synopsys.com)
 Initializing...
-Current time:       Wed Nov 19 18:14:19 2025
+Current time:       Wed Nov 19 18:28:49 2025
 Hostname:           lab01.ece.stonybrook.edu
 CPU Model:          11th Gen Intel(R) Core(TM) i7-11700 @ 2.50GHz
 CPU Details:        Cores = 16 : Sockets = 1 : Cache Size = 16384 KB : Freq = 2.50 GHz
@@ -41,14 +41,14 @@ Tmp Filesystem:     / mounted to /dev/mapper/rhel-root
 Work Disk:          3462 GB (Free 234 GB)
 Tmp Disk:           786 GB (Free 119 GB)
 
-CPU Load: 4%, Ram Free: 21 GB, Swap Free: 15 GB, Work Disk Free: 234 GB, Tmp Disk Free: 119 GB
+CPU Load: 0%, Ram Free: 21 GB, Swap Free: 15 GB, Work Disk Free: 234 GB, Tmp Disk Free: 119 GB
 ##############################################
 # Setup: fill out the following parameters: name of clock signal, clock period (ns),
 # reset signal name (if used), name of top-level module, name of source file
 set CLK_NAME "clk";
 clk
-set CLK_PERIOD .9;
-.9
+set CLK_PERIOD .91;
+.91
 set RST_NAME "reset";
 reset
 set TOP_MOD_NAME "fifo_out";
@@ -63,9 +63,9 @@ source setupdc.tcl
 NangateOpenCellLibrary_typical.db dw_foundation.sldb
 file mkdir work_synth
 date
-Wed Nov 19 18:14:19 2025
+Wed Nov 19 18:28:49 2025
 pid
-728456
+728750
 pwd
 /home/home5/cochen/ese507work/Project/Part2
 getenv USER
@@ -136,26 +136,26 @@ Presto compilation completed successfully. (fifo_out)
 Elaborated 1 design.
 Current design is now 'fifo_out'.
 Information: Building the design 'memory_dual_port' instantiated from design 'fifo_out' with
-	the parameters "12,19". (HDL-193)
+	the parameters "24,19". (HDL-193)
 
 Inferred memory devices in process
-	in routine memory_dual_port_WIDTH12_SIZE19 line 18 in file
+	in routine memory_dual_port_WIDTH24_SIZE19 line 18 in file
 		'./memory_dual_port.sv'.
 ===============================================================================
 |    Register Name    |   Type    | Width | Bus | MB | AR | AS | SR | SS | ST |
 ===============================================================================
-|    data_out_reg     | Flip-flop |  12   |  Y  | N  | N  | N  | N  | N  | N  |
-|       mem_reg       | Flip-flop |  228  |  Y  | N  | N  | N  | N  | N  | N  |
+|    data_out_reg     | Flip-flop |  24   |  Y  | N  | N  | N  | N  | N  | N  |
+|       mem_reg       | Flip-flop |  456  |  Y  | N  | N  | N  | N  | N  | N  |
 ===============================================================================
-Presto compilation completed successfully. (memory_dual_port_WIDTH12_SIZE19)
+Presto compilation completed successfully. (memory_dual_port_WIDTH24_SIZE19)
 1
 ###### CLOCKS AND PORTS #######
 set CLK_PORT [get_ports $CLK_NAME]
 {clk}
 set TMP1 [remove_from_collection [all_inputs] $CLK_PORT]
-{reset IN_AXIS_TDATA[11] IN_AXIS_TDATA[10] IN_AXIS_TDATA[9] IN_AXIS_TDATA[8] IN_AXIS_TDATA[7] IN_AXIS_TDATA[6] IN_AXIS_TDATA[5] IN_AXIS_TDATA[4] IN_AXIS_TDATA[3] IN_AXIS_TDATA[2] IN_AXIS_TDATA[1] IN_AXIS_TDATA[0] IN_AXIS_TVALID OUT_AXIS_TREADY}
+{reset IN_AXIS_TDATA[23] IN_AXIS_TDATA[22] IN_AXIS_TDATA[21] IN_AXIS_TDATA[20] IN_AXIS_TDATA[19] IN_AXIS_TDATA[18] IN_AXIS_TDATA[17] IN_AXIS_TDATA[16] IN_AXIS_TDATA[15] IN_AXIS_TDATA[14] IN_AXIS_TDATA[13] IN_AXIS_TDATA[12] IN_AXIS_TDATA[11] IN_AXIS_TDATA[10] IN_AXIS_TDATA[9] IN_AXIS_TDATA[8] IN_AXIS_TDATA[7] IN_AXIS_TDATA[6] IN_AXIS_TDATA[5] IN_AXIS_TDATA[4] IN_AXIS_TDATA[3] IN_AXIS_TDATA[2] IN_AXIS_TDATA[1] IN_AXIS_TDATA[0] IN_AXIS_TVALID OUT_AXIS_TREADY}
 set INPUTS [remove_from_collection $TMP1 $RST_NAME]
-{IN_AXIS_TDATA[11] IN_AXIS_TDATA[10] IN_AXIS_TDATA[9] IN_AXIS_TDATA[8] IN_AXIS_TDATA[7] IN_AXIS_TDATA[6] IN_AXIS_TDATA[5] IN_AXIS_TDATA[4] IN_AXIS_TDATA[3] IN_AXIS_TDATA[2] IN_AXIS_TDATA[1] IN_AXIS_TDATA[0] IN_AXIS_TVALID OUT_AXIS_TREADY}
+{IN_AXIS_TDATA[23] IN_AXIS_TDATA[22] IN_AXIS_TDATA[21] IN_AXIS_TDATA[20] IN_AXIS_TDATA[19] IN_AXIS_TDATA[18] IN_AXIS_TDATA[17] IN_AXIS_TDATA[16] IN_AXIS_TDATA[15] IN_AXIS_TDATA[14] IN_AXIS_TDATA[13] IN_AXIS_TDATA[12] IN_AXIS_TDATA[11] IN_AXIS_TDATA[10] IN_AXIS_TDATA[9] IN_AXIS_TDATA[8] IN_AXIS_TDATA[7] IN_AXIS_TDATA[6] IN_AXIS_TDATA[5] IN_AXIS_TDATA[4] IN_AXIS_TDATA[3] IN_AXIS_TDATA[2] IN_AXIS_TDATA[1] IN_AXIS_TDATA[0] IN_AXIS_TVALID OUT_AXIS_TREADY}
 create_clock -period $CLK_PERIOD $CLK_PORT
 1
 set_input_delay 0.08 -max -clock $CLK_NAME $INPUTS
@@ -168,7 +168,7 @@ set_max_area 0
 ###### RUN #####
 compile_ultra
 Information: Performing leakage power optimization. (PWR-850)
-CPU Load: 4%, Ram Free: 21 GB, Swap Free: 15 GB, Work Disk Free: 234 GB, Tmp Disk Free: 119 GB
+CPU Load: 0%, Ram Free: 21 GB, Swap Free: 15 GB, Work Disk Free: 234 GB, Tmp Disk Free: 119 GB
 Alib files are up-to-date.
 Information: Evaluating DesignWare library utilization. (UISN-27)
 
@@ -188,9 +188,9 @@ Information: Evaluating DesignWare library utilization. (UISN-27)
 | Design Information                                      | Value                                  |
 ====================================================================================================
 | Number of Scenarios                                     | 0                                      |
-| Leaf Cell Count                                         | 534                                    |
+| Leaf Cell Count                                         | 786                                    |
 | Number of User Hierarchies                              | 1                                      |
-| Sequential Cell Count                                   | 270                                    |
+| Sequential Cell Count                                   | 510                                    |
 | Macro Count                                             | 0                                      |
 | Number of Power Domains                                 | 0                                      |
 | Number of Path Groups                                   | 2                                      |
@@ -211,7 +211,7 @@ Loaded alib file './alib-52/NangateOpenCellLibrary_typical.db.alib'
   Building model 'DW01_NAND2'
 Information: Ungrouping hierarchy mem_inst before Pass 1 (OPT-776)
 Information: Ungrouping 1 of 2 hierarchies before Pass 1 (OPT-775)
-CPU Load: 4%, Ram Free: 21 GB, Swap Free: 15 GB, Work Disk Free: 234 GB, Tmp Disk Free: 119 GB
+CPU Load: 0%, Ram Free: 21 GB, Swap Free: 15 GB, Work Disk Free: 234 GB, Tmp Disk Free: 119 GB
 Information: State dependent leakage is now switched from on to off.
 
   Beginning Pass 1 Mapping
@@ -220,7 +220,7 @@ Information: State dependent leakage is now switched from on to off.
 Information: Added key list 'DesignWare' to design 'fifo_out'. (DDB-72)
  Implement Synthetic for 'fifo_out'.
 Information: Command 'do_operand_isolation' is obsolete and is being ignored.  Please refer to the replacement command 'set power_enable_datapath_gating true' instead. (INFO-118)
-CPU Load: 4%, Ram Free: 21 GB, Swap Free: 15 GB, Work Disk Free: 234 GB, Tmp Disk Free: 119 GB
+CPU Load: 0%, Ram Free: 21 GB, Swap Free: 15 GB, Work Disk Free: 234 GB, Tmp Disk Free: 119 GB
 
   Updating timing information
 Information: Updating design information... (UID-85)
@@ -234,13 +234,13 @@ Information: Command 'do_operand_isolation' is obsolete and is being ignored.  P
    ELAPSED            WORST NEG   SETUP    DESIGN                              LEAKAGE 
     TIME      AREA      SLACK     COST    RULE COST         ENDPOINT            POWER  
   --------- --------- --------- --------- --------- ------------------------- ---------
-    0:00:03    2560.8      0.19       4.8      29.2                           58828.1055
-    0:00:03    2551.5      0.23       5.2      29.2                           58587.2188
+    0:00:02    5131.1      0.45     137.7       0.0                           139459.2344
+    0:00:02    5102.1      0.45     157.6       0.0                           138482.7969
 
   Beginning Constant Register Removal
   -----------------------------------
-    0:00:03    2551.5      0.23       5.2      29.2                           58587.2188
-    0:00:03    2546.4      0.23       5.2      29.2                           58463.7695
+    0:00:02    5336.5      0.98     422.0       0.0                           150854.9219
+    0:00:02    5336.5      0.98     422.0       0.0                           150854.9219
 
   Beginning Global Optimizations
   ------------------------------
@@ -276,46 +276,47 @@ Information: Command 'do_operand_isolation' is obsolete and is being ignored.  P
   Global Optimization (Phase 28)
   Global Optimization (Phase 29)
   Global Optimization (Phase 30)
+  Mapping 'fifo_out_DP_OP_512_125_6825_2'
 
   Beginning Isolate Ports
   -----------------------
 
   Beginning Delay Optimization
   ----------------------------
-    0:00:03    2291.1      0.22       2.6       6.7                           47442.2148
-    0:00:03    2318.7      0.14       3.0       6.7                           48704.7109
-    0:00:03    2318.7      0.14       3.0       6.7                           48704.7109
-    0:00:04    2338.9      0.14       3.0       6.7                           48813.3359
-    0:00:04    2338.1      0.14       1.7       0.0                           48792.1367
-    0:00:04    2336.3      0.15       1.7       0.0                           48749.6758
+    0:00:03    4349.6      0.40      11.9       0.0                           96555.4453
+    0:00:04    4459.2      0.15       4.4       0.0                           100789.9297
+    0:00:04    4459.2      0.15       4.4       0.0                           100789.9297
+    0:00:05    4261.9      0.15       4.4       0.0                           94742.9297
+    0:00:05    4260.5      0.15       3.4       0.0                           94700.5312
+    0:00:05    4245.9      0.17       4.1       0.0                           94191.2734
 
   Beginning WLM Backend Optimization
   --------------------------------------
-    0:00:04    2328.8      0.14       1.8       0.0                           48362.0508
-    0:00:04    2326.7      0.14       1.8       0.0                           48159.7539
-    0:00:04    2326.7      0.14       1.8       0.0                           48159.7539
-    0:00:04    2327.8      0.14       1.6       0.0                           48221.7344
-    0:00:04    2327.8      0.14       1.6       0.0                           48221.7344
-    0:00:05    2348.0      0.11       1.3       0.0                           49029.5625
-    0:00:05    2348.0      0.11       1.3       0.0                           49029.5625
-    0:00:05    2353.6      0.11       1.3       0.0                           49476.2617
-    0:00:05    2353.6      0.11       1.3       0.0                           49476.2617
-    0:00:07    2353.6      0.11       1.3       0.0                           49476.2617
-    0:00:07    2353.6      0.11       1.3       0.0                           49476.2617
-    0:00:08    2352.8      0.10       1.2       0.0                           49425.1484
-    0:00:08    2352.8      0.10       1.2       0.0                           49425.1484
-    0:00:11    2353.8      0.10       1.2       0.0                           49479.8711
-    0:00:11    2353.8      0.10       1.2       0.0                           49479.8711
-    0:00:11    2353.8      0.10       1.1       0.0                           49479.8711
-    0:00:11    2353.8      0.10       1.1       0.0                           49479.8711
-    0:00:13    2353.3      0.09       1.1       0.0                           49489.8672
-    0:00:13    2353.3      0.09       1.1       0.0                           49489.8672
-    0:00:14    2352.8      0.08       1.0       0.0                           49437.3320
-    0:00:14    2352.8      0.08       1.0       0.0                           49437.3320
-    0:00:14    2352.8      0.08       1.0       0.0                           49437.3320
-    0:00:14    2354.4      0.02       0.3       0.0 mem_inst/data_out_reg[2]/D 49196.9883
-    0:00:14    2354.4      0.02       0.3       0.0                           49196.9883
-    0:00:15    2354.4      0.02       0.3       0.0                           49196.9883
+    0:00:05    4132.6      0.15       3.3       0.0                           89408.0938
+    0:00:05    4096.1      0.13       2.8       0.0                           87475.3516
+    0:00:05    4096.1      0.13       2.8       0.0                           87475.3516
+    0:00:05    3971.6      0.13       2.8       0.0                           82016.3672
+    0:00:05    3971.6      0.13       2.8       0.0                           82016.3672
+    0:00:06    3981.8      0.12       2.4       0.0                           82364.2188
+    0:00:06    3981.8      0.12       2.4       0.0                           82364.2188
+    0:00:06    3981.8      0.12       2.4       0.0                           82364.2188
+    0:00:06    3981.8      0.12       2.4       0.0                           82364.2188
+    0:00:06    3981.8      0.12       2.4       0.0                           82364.2188
+    0:00:06    3981.8      0.12       2.4       0.0                           82364.2188
+    0:00:06    3981.5      0.11       3.0       0.0                           82342.5938
+    0:00:06    3981.5      0.11       3.0       0.0                           82342.5938
+    0:00:07    3984.9      0.11       3.0       0.0                           82433.3672
+    0:00:07    3984.9      0.11       3.0       0.0                           82433.3672
+    0:00:07    3983.3      0.10       2.8       0.0                           82388.1328
+    0:00:07    3983.3      0.10       2.8       0.0                           82388.1328
+    0:00:07    3983.3      0.10       2.8       0.0                           82388.1328
+    0:00:07    3983.3      0.10       2.8       0.0                           82388.1328
+    0:00:07    3983.3      0.10       2.8       0.0                           82388.1328
+    0:00:07    3983.3      0.10       2.8       0.0                           82388.1328
+    0:00:08    3983.3      0.10       2.8       0.0                           82388.1328
+    0:00:08    3998.8      0.05       1.2       0.0 mem_inst/data_out_reg[1]/D 82562.2734
+    0:00:08    3999.8      0.05       1.1       0.0                           82557.1484
+    0:00:09    3999.8      0.05       1.1       0.0                           82557.1484
 
 
   Beginning Leakage Power Optimization  (max_leakage_power 0)
@@ -325,47 +326,48 @@ Information: Command 'do_operand_isolation' is obsolete and is being ignored.  P
    ELAPSED            WORST NEG   SETUP    DESIGN                              LEAKAGE 
     TIME      AREA      SLACK     COST    RULE COST         ENDPOINT            POWER  
   --------- --------- --------- --------- --------- ------------------------- ---------
-    0:00:15    2354.4      0.02       0.3       0.0                           49196.9883
-    0:00:16    2360.7      0.00       0.0       0.0                           49246.1289
-    0:00:16    2360.7      0.00       0.0       0.0                           49246.1289
-    0:00:16    2360.7      0.00       0.0       0.0                           49246.1289
-    0:00:16    2360.2      0.00       0.0       0.0                           49217.4219
-    0:00:16    2360.2      0.00       0.0       0.0                           49217.4219
-    0:00:16    2360.2      0.00       0.0       0.0                           49217.4219
-    0:00:16    2360.2      0.00       0.0       0.0                           49217.4219
-    0:00:16    2360.2      0.00       0.0       0.0                           49217.4219
-    0:00:16    2360.2      0.00       0.0       0.0                           49217.4219
-    0:00:16    2360.2      0.00       0.0       0.0                           49217.4219
-    0:00:16    2360.2      0.00       0.0       0.0                           49217.4219
-    0:00:16    2360.2      0.00       0.0       0.0                           49217.4219
-    0:00:16    2360.2      0.00       0.0       0.0                           49217.4219
-    0:00:16    2360.2      0.00       0.0       0.0                           49217.4219
-    0:00:16    2360.2      0.00       0.0       0.0                           49217.4219
-    0:00:16    2360.2      0.00       0.0       0.0                           49217.4219
-    0:00:16    2360.2      0.00       0.0       0.0                           49217.4219
-    0:00:16    2360.2      0.00       0.0       0.0                           49217.4219
-    0:00:16    2360.2      0.00       0.0       0.0                           49217.4219
-    0:00:16    2360.2      0.00       0.0       0.0                           49217.4219
-    0:00:16    2360.2      0.00       0.0       0.0                           49217.4219
-    0:00:16    2360.2      0.00       0.0       0.0                           49217.4219
+    0:00:09    3999.8      0.05       1.1       0.0                           82557.1484
+    0:00:09    4024.8      0.01       0.1       0.0 mem_inst/data_out_reg[1]/D 83180.8125
+    0:00:09    4025.6      0.01       0.0       0.0                           83195.1641
+    0:00:09    4032.3      0.01       0.0       0.0                           83448.6406
+    0:00:09    4032.3      0.01       0.0       0.0                           83448.6406
+    0:00:09    4018.5      0.01       0.0       0.0                           82660.9219
+    0:00:09    4018.5      0.01       0.0       0.0                           82660.9219
+    0:00:10    4018.5      0.01       0.0       0.0                           82660.9219
+    0:00:10    4018.5      0.01       0.0       0.0                           82660.9219
+    0:00:10    4018.5      0.01       0.0       0.0                           82660.9219
+    0:00:10    4018.5      0.01       0.0       0.0                           82660.9219
+    0:00:10    4018.5      0.01       0.0       0.0                           82660.9219
+    0:00:10    4018.5      0.01       0.0       0.0                           82660.9219
+    0:00:10    4020.6      0.01       0.0       0.0                           82741.3047
+    0:00:10    4020.6      0.01       0.0       0.0                           82741.3047
+    0:00:10    4020.6      0.01       0.0       0.0                           82741.3047
+    0:00:10    4020.6      0.01       0.0       0.0                           82741.3047
+    0:00:10    4020.6      0.01       0.0       0.0                           82741.3047
+    0:00:10    4020.6      0.01       0.0       0.0                           82741.3047
+    0:00:11    4020.6      0.01       0.0       0.0                           82741.3047
+    0:00:11    4020.6      0.01       0.0       0.0                           82741.3047
+    0:00:11    4020.6      0.01       0.0       0.0                           82741.3047
+    0:00:11    4020.6      0.01       0.0       0.0                           82741.3047
+    0:00:11    4020.6      0.01       0.0       0.0                           82741.3047
 
                                   TOTAL                                                
    ELAPSED            WORST NEG   SETUP    DESIGN                              LEAKAGE 
     TIME      AREA      SLACK     COST    RULE COST         ENDPOINT            POWER  
   --------- --------- --------- --------- --------- ------------------------- ---------
-    0:00:16    2360.2      0.00       0.0       0.0                           49217.4219
-    0:00:16    2348.8      0.00       0.0       0.0                           48684.9453
-    0:00:16    2341.1      0.00       0.0       0.0                           48561.8047
-    0:00:16    2341.1      0.00       0.0       0.0                           48561.8047
-    0:00:16    2341.1      0.00       0.0       0.0                           48561.8047
-    0:00:16    2337.1      0.00       0.0       0.0                           48419.6133
-    0:00:16    2337.1      0.00       0.0       0.0                           48419.6133
-    0:00:16    2337.1      0.00       0.0       0.0                           48419.6133
-    0:00:16    2337.1      0.00       0.0       0.0                           48419.6133
-    0:00:16    2337.1      0.00       0.0       0.0                           48419.6133
-    0:00:16    2337.1      0.00       0.0       0.0                           48419.6133
-    0:00:16    2334.7      0.00       0.0       0.0                           48245.2812
-CPU Load: 4%, Ram Free: 21 GB, Swap Free: 15 GB, Work Disk Free: 234 GB, Tmp Disk Free: 119 GB
+    0:00:11    4020.6      0.01       0.0       0.0                           82741.3047
+    0:00:11    3988.7      0.01       0.0       0.0                           81339.9531
+    0:00:11    3968.5      0.01       0.0       0.0                           80794.9844
+    0:00:11    3968.5      0.01       0.0       0.0                           80794.9844
+    0:00:11    3968.5      0.01       0.0       0.0                           80794.9844
+    0:00:11    3954.9      0.01       0.0       0.0                           80429.6016
+    0:00:11    3954.1      0.00       0.0       0.0                           80408.1641
+    0:00:11    3954.1      0.00       0.0       0.0                           80408.1641
+    0:00:11    3954.1      0.00       0.0       0.0                           80408.1641
+    0:00:11    3954.1      0.00       0.0       0.0                           80408.1641
+    0:00:11    3954.1      0.00       0.0       0.0                           80408.1641
+    0:00:11    3948.2      0.00       0.0       0.0                           80104.1641
+CPU Load: 1%, Ram Free: 21 GB, Swap Free: 15 GB, Work Disk Free: 234 GB, Tmp Disk Free: 119 GB
 Loading db file '/home/home4/pmilder/ese507/synthesis/lib/NangateOpenCellLibrary_typical.db'
 
 
@@ -376,7 +378,7 @@ Note: Symbol # after min delay cost means estimated hold TNS across all active s
   ---------------------
 Information: State dependent leakage is now switched from off to on.
 Information: Propagating switching activity (low effort zero delay simulation). (PWR-6)
-CPU Load: 4%, Ram Free: 21 GB, Swap Free: 15 GB, Work Disk Free: 234 GB, Tmp Disk Free: 119 GB
+CPU Load: 1%, Ram Free: 21 GB, Swap Free: 15 GB, Work Disk Free: 234 GB, Tmp Disk Free: 119 GB
 Information: Total number of MV cells in the design.
 ----------------------------------------------------------------------------------------------------
  MV Cells                                           Total Number                                   
@@ -403,7 +405,7 @@ report_area
 Report : area
 Design : fifo_out
 Version: U-2022.12-SP7-2
-Date   : Wed Nov 19 18:14:35 2025
+Date   : Wed Nov 19 18:29:02 2025
 ****************************************
 
 Information: Updating design information... (UID-85)
@@ -411,22 +413,22 @@ Library(s) Used:
 
     NangateOpenCellLibrary (File: /home/home4/pmilder/ese507/synthesis/lib/NangateOpenCellLibrary_typical.db)
 
-Number of ports:                           30
-Number of nets:                          1428
-Number of cells:                         1382
-Number of combinational cells:           1100
-Number of sequential cells:               270
+Number of ports:                           54
+Number of nets:                          1960
+Number of cells:                         1903
+Number of combinational cells:           1368
+Number of sequential cells:               510
 Number of macros/black boxes:               0
-Number of buf/inv:                        314
-Number of references:                      27
+Number of buf/inv:                        123
+Number of references:                      31
 
-Combinational area:               1091.398012
-Buf/Inv area:                      172.102001
-Noncombinational area:            1243.283956
+Combinational area:               1595.734022
+Buf/Inv area:                       84.056000
+Noncombinational area:            2352.503916
 Macro/Black Box area:                0.000000
 Net Interconnect area:      undefined  (Wire load has zero net area)
 
-Total cell area:                  2334.681968
+Total cell area:                  3948.237939
 Total area:                 undefined
 1
 report_power
@@ -436,7 +438,7 @@ Report : power
         -analysis_effort low
 Design : fifo_out
 Version: U-2022.12-SP7-2
-Date   : Wed Nov 19 18:14:35 2025
+Date   : Wed Nov 19 18:29:02 2025
 ****************************************
 
 
@@ -467,12 +469,12 @@ Attributes
 i - Including register clock pin internal power
 
 
-  Cell Internal Power  =   1.3031 mW   (92%)
-  Net Switching Power  = 106.2492 uW    (8%)
+  Cell Internal Power  =   2.3295 mW   (94%)
+  Net Switching Power  = 157.2448 uW    (6%)
                          ---------
-Total Dynamic Power    =   1.4093 mW  (100%)
+Total Dynamic Power    =   2.4868 mW  (100%)
 
-Cell Leakage Power     =  47.5011 uW
+Cell Leakage Power     =  76.7116 uW
 
 
                  Internal         Switching           Leakage            Total
@@ -481,12 +483,12 @@ Power Group      Power            Power               Power              Power  
 io_pad             0.0000            0.0000            0.0000            0.0000  (   0.00%)
 memory             0.0000            0.0000            0.0000            0.0000  (   0.00%)
 black_box          0.0000            0.0000            0.0000            0.0000  (   0.00%)
-clock_network  1.1989e+03            0.0000            0.0000        1.1989e+03  (  82.30%)  i
-register          42.9150           16.8155        2.1592e+04           81.3230  (   5.58%)
+clock_network  2.1709e+03            0.0000            0.0000        2.1709e+03  (  84.69%)  i
+register          71.5994           21.7213        4.0823e+04          134.1436  (   5.23%)
 sequential         0.0000            0.0000            0.0000            0.0000  (   0.00%)
-combinational     61.2400           89.4337        2.5909e+04          176.5824  (  12.12%)
+combinational     86.9980          135.5234        3.5889e+04          258.4098  (  10.08%)
 --------------------------------------------------------------------------------------------------
-Total          1.3031e+03 uW       106.2493 uW     4.7501e+04 nW     1.4568e+03 uW
+Total          2.3295e+03 uW       157.2447 uW     7.6712e+04 nW     2.5635e+03 uW
 1
 report_timing
  
@@ -497,15 +499,15 @@ Report : timing
         -max_paths 1
 Design : fifo_out
 Version: U-2022.12-SP7-2
-Date   : Wed Nov 19 18:14:35 2025
+Date   : Wed Nov 19 18:29:02 2025
 ****************************************
 
 Operating Conditions: typical   Library: NangateOpenCellLibrary
 Wire Load Model Mode: top
 
-  Startpoint: capacity_reg[3]
+  Startpoint: capacity_reg[12]
               (rising edge-triggered flip-flop clocked by clk)
-  Endpoint: mem_inst/data_out_reg[2]
+  Endpoint: mem_inst/data_out_reg[0]
             (rising edge-triggered flip-flop clocked by clk)
   Path Group: clk
   Path Type: max
@@ -518,34 +520,36 @@ Wire Load Model Mode: top
   --------------------------------------------------------------------------
   clock clk (rise edge)                                   0.00       0.00
   clock network delay (ideal)                             0.00       0.00
-  capacity_reg[3]/CK (DFF_X1)                             0.00       0.00 r
-  capacity_reg[3]/Q (DFF_X1)                              0.08       0.08 f
-  U950/ZN (NOR2_X1)                                       0.04       0.12 r
-  U893/ZN (AND3_X1)                                       0.06       0.17 r
-  U915/ZN (NAND4_X1)                                      0.05       0.22 f
-  U847/ZN (AND2_X1)                                       0.05       0.27 f
-  U962/ZN (OAI22_X1)                                      0.07       0.34 r
-  U916/ZN (XNOR2_X1)                                      0.07       0.41 r
-  U854/ZN (AND2_X1)                                       0.05       0.46 r
-  U888/ZN (NAND4_X1)                                      0.05       0.51 f
-  U889/ZN (NAND2_X1)                                      0.05       0.56 r
-  U878/ZN (NOR2_X1)                                       0.03       0.60 f
-  U869/Z (BUF_X1)                                         0.05       0.64 f
-  U1085/ZN (AOI22_X1)                                     0.05       0.69 r
-  U1091/ZN (NAND4_X1)                                     0.04       0.74 f
-  U1097/ZN (AOI211_X1)                                    0.08       0.82 r
-  U1098/ZN (NAND2_X1)                                     0.03       0.85 f
-  mem_inst/data_out_reg[2]/D (DFFRS_X1)                   0.01       0.86 f
-  data arrival time                                                  0.86
+  capacity_reg[12]/CK (DFF_X1)                            0.00       0.00 r
+  capacity_reg[12]/Q (DFF_X1)                             0.09       0.09 r
+  U1532/ZN (NOR2_X1)                                      0.02       0.11 f
+  U1531/ZN (AND2_X1)                                      0.04       0.14 f
+  U1526/ZN (AND4_X1)                                      0.05       0.19 f
+  U1819/ZN (NAND2_X1)                                     0.03       0.22 r
+  U1672/ZN (NAND2_X1)                                     0.03       0.25 f
+  U1669/ZN (OR2_X1)                                       0.06       0.32 f
+  U1664/ZN (OAI21_X1)                                     0.04       0.35 r
+  U1668/ZN (XNOR2_X1)                                     0.06       0.41 r
+  U1666/ZN (AND2_X1)                                      0.05       0.46 r
+  U1831/ZN (NAND4_X1)                                     0.04       0.50 f
+  U1651/ZN (AND2_X1)                                      0.05       0.55 f
+  U1836/ZN (NAND2_X1)                                     0.04       0.59 r
+  U1860/ZN (NOR2_X1)                                      0.04       0.63 f
+  U1657/Z (BUF_X2)                                        0.07       0.69 f
+  U2122/ZN (AOI22_X1)                                     0.07       0.76 r
+  U1545/ZN (AND4_X1)                                      0.07       0.83 r
+  U1542/ZN (NAND3_X1)                                     0.03       0.86 f
+  mem_inst/data_out_reg[0]/D (DFFRS_X1)                   0.01       0.87 f
+  data arrival time                                                  0.87
 
-  clock clk (rise edge)                                   0.90       0.90
-  clock network delay (ideal)                             0.00       0.90
-  mem_inst/data_out_reg[2]/CK (DFFRS_X1)                  0.00       0.90 r
-  library setup time                                     -0.04       0.86
-  data required time                                                 0.86
+  clock clk (rise edge)                                   0.91       0.91
+  clock network delay (ideal)                             0.00       0.91
+  mem_inst/data_out_reg[0]/CK (DFFRS_X1)                  0.00       0.91 r
+  library setup time                                     -0.04       0.87
+  data required time                                                 0.87
   --------------------------------------------------------------------------
-  data required time                                                 0.86
-  data arrival time                                                 -0.86
+  data required time                                                 0.87
+  data arrival time                                                 -0.87
   --------------------------------------------------------------------------
   slack (MET)                                                        0.00
 
@@ -559,7 +563,7 @@ Report : timing
         -max_paths 1
 Design : fifo_out
 Version: U-2022.12-SP7-2
-Date   : Wed Nov 19 18:14:35 2025
+Date   : Wed Nov 19 18:29:02 2025
 ****************************************
 
 Operating Conditions: typical   Library: NangateOpenCellLibrary
@@ -568,13 +572,13 @@ No loops.
 
 1
 date
-Wed Nov 19 18:14:35 2025
+Wed Nov 19 18:29:02 2025
 # write -f verilog $TOP_MOD_NAME -output gates.v -hierarchy
 quit
 
-Memory usage for this session 145 Mbytes.
-Memory usage for this session including child processes 145 Mbytes.
-CPU usage for this session 16 seconds ( 0.00 hours ).
+Memory usage for this session 148 Mbytes.
+Memory usage for this session including child processes 149 Mbytes.
+CPU usage for this session 13 seconds ( 0.00 hours ).
 Elapsed time for this session 17 seconds ( 0.00 hours ).
 
 Thank you...
