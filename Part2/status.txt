@@ -1,2 +1,2 @@
 Our design was fully functional. We tested the design using OUTW = 24 and DEPTH = 19 and verified all signals by simulating the program on QuestaSim. We also synthesized the program using Synopsys and found the minimum 
-possible clock period that meets timing requirements to be 0.55 ns, which is a frequency of 1818.18 MHz
+possible clock period that meets timing requirements to be 0.91 ns, which is a frequency of 1098.9011 MHz
