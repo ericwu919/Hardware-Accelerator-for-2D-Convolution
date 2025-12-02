@@ -26,7 +26,7 @@ module mac_pipe #(
             .B(input1),
             .TC(1'b1),  
             .CLK(clk),
-            .PRODUCT(mult_output)
+            .PRODUCT(prod)
         );
 
     // Pipeline the input_valid signal to match multiplier latency (4 cycles)
@@ -40,7 +40,7 @@ module mac_pipe #(
     
     always_comb begin
         // Add the result of the multiplier (prod) to the flip-flop output
-        sum = mult_output + out;
+        sum = prod + out;
     end
 
     // init_acc happens immediately (no delay) to initialize the accumulator
@@ -53,5 +53,6 @@ module mac_pipe #(
         else if (enable_pipe[3] == 1)  // Accumulate after 4-cycle delay
             out <= sum;
     end 
+
 
 endmodule
