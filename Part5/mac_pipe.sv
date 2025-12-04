@@ -54,5 +54,4 @@ module mac_pipe #(
             out <= sum;
     end 
 
-
 endmodule
