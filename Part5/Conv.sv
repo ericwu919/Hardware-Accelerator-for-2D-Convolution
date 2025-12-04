@@ -2,10 +2,10 @@
 // Project (Part 5): Hardware Accelerator for 2D Convolution (Optimization)
 
 module Conv #(
-    parameter INW = 18,
-    parameter R = 8,
-    parameter C = 8,
-    parameter MAXK = 5,
+    parameter INW = 24,
+    parameter R = 16,
+    parameter C = 17,
+    parameter MAXK = 9,
     localparam OUTW = $clog2(MAXK*MAXK*(128'd1 << 2*INW-2) + (1<<(INW-1)))+1,
     localparam K_BITS = $clog2(MAXK+1)
 )(
@@ -35,22 +35,25 @@ localparam FIFO_DEPTH = C - 1;
 logic inputs_loaded;    // Assert whe nX, W, K, and B loaded and ready
 logic [K_BITS-1:0] K;
 logic signed [INW-1:0] B;
-logic signed [INW-1:0] X_data, W_data;
+
+logic signed [INW-1:0] X_data_0, X_data_1, X_data_2, X_data_3;
+logic signed [INW-1:0] W_data_0, W_data_1, W_data_2, W_data_3;
 
 // Signals TO input memory module
 logic compute_finished;     // Control signal (sent to input_mems when convolution complete)
-logic [X_ADDR_BITS-1:0] X_read_addr;
-logic [W_ADDR_BITS-1:0] W_read_addr;
+logic [X_ADDR_BITS-1:0] X_read_addr_0, X_read_addr_1, X_read_addr_2, X_read_addr_3;
+logic [W_ADDR_BITS-1:0] W_read_addr_0, W_read_addr_1, W_read_addr_2, W_read_addr_3;
 
 // MAC Control Signals
-logic signed [INW-1:0] mac_init_value;
-logic signed [OUTW-1:0] mac_out;
-logic mac_init_acc; // 1: initialize accumulator
-logic mac_input_valid;  // 1: MAC processes current inputs
+logic signed [INW-1:0] mac_init_value_0, mac_init_value_1, mac_init_value_2, mac_init_value_3;
+logic signed [OUTW-1:0] mac_out_0, mac_out_1, mac_out_2, mac_out_3;
+logic mac_init_acc_0, mac_init_acc_1, mac_init_acc_2, mac_init_acc_3; // 1: initialize accumulator
+logic mac_input_valid_0, mac_input_valid_1, mac_input_valid_2, mac_input_valid_3;  // 1: MAC processes current inputs
 
 // Signals FOR Output FIFO
 logic fifo_in_valid;    // 1 when write to FIFO
 logic fifo_in_ready;    // 1 by FIFO when can accept data
+logic signed [OUTW-1:0] fifo_in_data;
 
 // Output dimensions
 logic [$clog2(R+1)-1:0] R_out;  // # of output rows = R-K+1
@@ -67,6 +70,10 @@ logic [W_ADDR_BITS-1:0] j_counter;  // Weight column counter (0 to K-1)
 // MAC operation tracking
 logic [W_ADDR_BITS:0] mac_count;
 logic [W_ADDR_BITS:0] K_squared;
+
+// output write control
+logic [1:0] output_write_idx;   // which mac output to write (0-3)
+logic [2:0] num_valid_outputs;  // how many MACs have valid outputs (0-4)
 
 // --------------------------------------------
 // FSM States
@@ -99,9 +106,54 @@ end
 // --------------------------------------------
 always_comb begin
     // Calculate X address: X[r+i][c+j] in row_major order = (r+i)*C + (c+j)
-    X_read_addr = (r_counter + i_counter) * C + (c_counter + j_counter);
     // Calculate W address: W[i][j] in row-major order = i*K+j
-    W_read_addr = i_counter * K + j_counter;
+    //if (c_counter < C_out) begin
+        X_read_addr_0 = (r_counter + i_counter) * C + (c_counter + j_counter);
+        W_read_addr_0 = i_counter * K + j_counter;
+    /*end else begin
+        X_read_addr_0 = 0;
+        W_read_addr_0 = 0;
+    end*/
+
+    //if (c_counter + 1 < C_out) begin
+        X_read_addr_1 = (r_counter + i_counter) * C + (c_counter + 1 + j_counter);
+        W_read_addr_1 = i_counter * K + j_counter;
+    /*end else begin
+        X_read_addr_1 = 0;
+        W_read_addr_1 = 0;
+    end*/
+
+    //if (c_counter + 2 < C_out) begin
+        X_read_addr_2 = (r_counter + i_counter) * C + (c_counter + 2 + j_counter);
+        W_read_addr_2 = i_counter * K + j_counter;
+    /*end else begin
+        X_read_addr_2 = 0;
+        W_read_addr_2 = 0;
+    end*/
+
+    //if (c_counter + 3 < C_out) begin
+        X_read_addr_3 = (r_counter + i_counter) * C + (c_counter + 3 + j_counter);
+        W_read_addr_3 = i_counter * K + j_counter;
+    /*end else begin
+        X_read_addr_3 = 0;
+        W_read_addr_3 = 0;
+    end*/
+    
+end
+
+// determine # of valid outputs this iteration
+always_comb begin
+    if (c_counter + 4 <= C_out) begin
+        num_valid_outputs = 4;
+    end else if (c_counter + 3 <= C_out) begin
+        num_valid_outputs = 3;
+    end else if (c_counter + 2 <= C_out) begin
+        num_valid_outputs = 2;
+    end else if (c_counter + 1 <= C_out) begin
+        num_valid_outputs = 1;
+    end else begin
+        num_valid_outputs = 1;
+    end
 end
 
 // --------------------------------------------
@@ -114,6 +166,7 @@ always_ff @(posedge clk) begin
         i_counter <= 0;
         j_counter <= 0;
         mac_count <= 0;
+        output_write_idx <= 0;
     end else begin
         case (current_state)
             IDLE: begin
@@ -123,12 +176,14 @@ always_ff @(posedge clk) begin
                 i_counter <= 0;
                 j_counter <= 0;
                 mac_count <= 0;
+                output_write_idx <= 0;
             end
             SETUP_ADDR: begin
                 // set up address for [0][0]
                 i_counter <= 0;
                 j_counter <= 0;
                 mac_count <= 0;
+                output_write_idx <= 0;
             end
             INIT_ACC: begin
                 // initialize accumulator, prepare first address [0][0]
@@ -148,19 +203,24 @@ always_ff @(posedge clk) begin
             end
             WRITE_OUTPUT: begin
                 if (fifo_in_ready) begin
-                    i_counter <= 0;
-                    j_counter <= 0;
-                    mac_count <= 0;
+                    if (output_write_idx == num_valid_outputs - 1) begin
+                        output_write_idx <= 0;
+                        i_counter <= 0;
+                        j_counter <= 0;
+                        mac_count <= 0;
 
-                    if (c_counter == C_out - 1) begin
-                        c_counter <= 0;
-                        if (r_counter == R_out - 1) begin
-                            r_counter <= 0;
+                        if (c_counter + 4 >= C_out) begin
+                            c_counter <= 0;
+                            if (r_counter == R_out - 1) begin
+                                r_counter <= 0;
+                            end else begin
+                                r_counter <= r_counter + 1;
+                            end
                         end else begin
-                            r_counter <= r_counter + 1;
+                            c_counter <= c_counter + 4;
                         end
                     end else begin
-                        c_counter <= c_counter + 1;
+                        output_write_idx <= output_write_idx + 1;
                     end
                 end
             end
@@ -173,10 +233,24 @@ end
 // --------------------------------------------
 always_comb begin
     next_state = current_state;
-    mac_init_acc = 0;
-    mac_input_valid = 0;
-    mac_init_value = B;
+    mac_init_acc_0 = 0;
+    mac_input_valid_0 = 0;
+    mac_init_value_0 = B;
+
+    mac_init_acc_1 = 0;
+    mac_input_valid_1 = 0;
+    mac_init_value_1 = B;
+
+    mac_init_acc_2 = 0;
+    mac_input_valid_2 = 0;
+    mac_init_value_2 = B;
+
+    mac_init_acc_3 = 0;
+    mac_input_valid_3 = 0;
+    mac_init_value_3 = B;
+
     fifo_in_valid = 0;
+    fifo_in_data = 0;
     compute_finished = 0;
 
     case (current_state)
@@ -191,13 +265,39 @@ always_comb begin
         end
         INIT_ACC: begin
             // initialize accumulator with B only
-            mac_init_acc = 1;
-            mac_init_value = B;
+            if (c_counter < C_out) begin
+                mac_init_acc_0 = 1;
+                mac_init_value_0 = B;
+            end
+            if (c_counter + 1< C_out) begin
+                mac_init_acc_1 = 1;
+                mac_init_value_1 = B;
+            end
+            if (c_counter + 2 < C_out) begin
+                mac_init_acc_2 = 1;
+                mac_init_value_2 = B;
+            end
+            if (c_counter + 3 < C_out) begin
+                mac_init_acc_3 = 1;
+                mac_init_value_3 = B;
+            end
             next_state = COMPUTE_MAC;
         end
         COMPUTE_MAC: begin
             // feed data to MAC
-            mac_input_valid = 1;
+            if (c_counter < C_out) begin
+                mac_input_valid_0 = 1;
+            end
+            if (c_counter + 1 < C_out) begin
+                mac_input_valid_1 = 1;
+            end
+            if (c_counter + 2 < C_out) begin
+                mac_input_valid_2 = 1;
+            end
+            if (c_counter + 3 < C_out) begin
+                mac_input_valid_3 = 1;
+            end
+            
             if (mac_count == K_squared - 1) begin
                 // fed all K*K pairs, now wait 4 cycles for pipeline
                 next_state = WAIT_MAC_1;
@@ -217,12 +317,27 @@ always_comb begin
         end
         WRITE_OUTPUT: begin
             fifo_in_valid = 1;
+
+            case (output_write_idx)
+                2'd0: fifo_in_data = mac_out_0;
+                2'd1: fifo_in_data = mac_out_1;
+                2'd2: fifo_in_data = mac_out_2;
+                2'd3: fifo_in_data = mac_out_3;    
+                default: fifo_in_data = mac_out_0;
+            endcase
+
             if (fifo_in_ready) begin
-                if (r_counter == R_out - 1 && c_counter == C_out - 1) begin
-                    next_state = DONE;
+                if (output_write_idx >= num_valid_outputs - 1) begin
+                    if (r_counter == R_out - 1 && c_counter + 4 >= C_out) begin
+                        next_state = DONE;
+                    end else begin
+                        next_state = SETUP_ADDR;
+                    end
                 end else begin
-                    next_state = SETUP_ADDR;
+                    next_state = WRITE_OUTPUT;
                 end
+            end else begin
+                next_state = WRITE_OUTPUT;
             end
         end
         DONE: begin
@@ -263,25 +378,82 @@ input_mems #(
     .compute_finished(compute_finished),
     .K(K),
     .B(B),
-    .X_read_addr(X_read_addr),
-    .X_data(X_data),
-    .W_read_addr(W_read_addr),
-    .W_data(W_data)
+    .X_read_addr_0(X_read_addr_0),
+    .X_data_0(X_data_0),
+    .W_read_addr_0(W_read_addr_0),
+    .W_data_0(W_data_0),
+
+    .X_read_addr_1(X_read_addr_1),
+    .X_data_1(X_data_1),
+    .W_read_addr_1(W_read_addr_1),
+    .W_data_1(W_data_1),
+    
+    .X_read_addr_2(X_read_addr_2),
+    .X_data_2(X_data_2),
+    .W_read_addr_2(W_read_addr_2),
+    .W_data_2(W_data_2),
+    
+    .X_read_addr_3(X_read_addr_3),
+    .X_data_3(X_data_3),
+    .W_read_addr_3(W_read_addr_3),
+    .W_data_3(W_data_3)
 );
 
 // MAC Pipeline Module
 mac_pipe #(
     .INW(INW),
     .OUTW(OUTW)
-) mac_inst (
+) mac_inst_0 (
     .clk(clk),
     .reset(reset),
-    .input0(X_data),
-    .input1(W_data),
-    .init_value(mac_init_value),
-    .out(mac_out),
-    .init_acc(mac_init_acc),
-    .input_valid(mac_input_valid)
+    .input0(X_data_0),
+    .input1(W_data_0),
+    .init_value(mac_init_value_0),
+    .out(mac_out_0),
+    .init_acc(mac_init_acc_0),
+    .input_valid(mac_input_valid_0)
+);
+
+mac_pipe #(
+    .INW(INW),
+    .OUTW(OUTW)
+) mac_inst_1 (
+    .clk(clk),
+    .reset(reset),
+    .input0(X_data_1),
+    .input1(W_data_1),
+    .init_value(mac_init_value_1),
+    .out(mac_out_1),
+    .init_acc(mac_init_acc_1),
+    .input_valid(mac_input_valid_1)
+);
+
+mac_pipe #(
+    .INW(INW),
+    .OUTW(OUTW)
+) mac_inst_2 (
+    .clk(clk),
+    .reset(reset),
+    .input0(X_data_2),
+    .input1(W_data_2),
+    .init_value(mac_init_value_2),
+    .out(mac_out_2),
+    .init_acc(mac_init_acc_2),
+    .input_valid(mac_input_valid_2)
+);
+
+mac_pipe #(
+    .INW(INW),
+    .OUTW(OUTW)
+) mac_inst_3 (
+    .clk(clk),
+    .reset(reset),
+    .input0(X_data_3),
+    .input1(W_data_3),
+    .init_value(mac_init_value_3),
+    .out(mac_out_3),
+    .init_acc(mac_init_acc_3),
+    .input_valid(mac_input_valid_3)
 );
 
 // Output FIFO Module
@@ -291,7 +463,7 @@ fifo_out #(
 ) output_fifo_inst (
     .clk(clk),
     .reset(reset),
-    .IN_AXIS_TDATA(mac_out),
+    .IN_AXIS_TDATA(fifo_in_data),
     .IN_AXIS_TVALID(fifo_in_valid),
     .IN_AXIS_TREADY(fifo_in_ready),
     .OUT_AXIS_TDATA(OUTPUT_TDATA),
