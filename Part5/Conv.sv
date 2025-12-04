@@ -107,38 +107,18 @@ end
 always_comb begin
     // Calculate X address: X[r+i][c+j] in row_major order = (r+i)*C + (c+j)
     // Calculate W address: W[i][j] in row-major order = i*K+j
-    //if (c_counter < C_out) begin
-        X_read_addr_0 = (r_counter + i_counter) * C + (c_counter + j_counter);
-        W_read_addr_0 = i_counter * K + j_counter;
-    /*end else begin
-        X_read_addr_0 = 0;
-        W_read_addr_0 = 0;
-    end*/
+    X_read_addr_0 = (r_counter + i_counter) * C + (c_counter + j_counter);
+    W_read_addr_0 = i_counter * K + j_counter;
 
-    //if (c_counter + 1 < C_out) begin
-        X_read_addr_1 = (r_counter + i_counter) * C + (c_counter + 1 + j_counter);
-        W_read_addr_1 = i_counter * K + j_counter;
-    /*end else begin
-        X_read_addr_1 = 0;
-        W_read_addr_1 = 0;
-    end*/
+    X_read_addr_1 = (r_counter + i_counter) * C + (c_counter + 1 + j_counter);
+    W_read_addr_1 = i_counter * K + j_counter;
 
-    //if (c_counter + 2 < C_out) begin
-        X_read_addr_2 = (r_counter + i_counter) * C + (c_counter + 2 + j_counter);
-        W_read_addr_2 = i_counter * K + j_counter;
-    /*end else begin
-        X_read_addr_2 = 0;
-        W_read_addr_2 = 0;
-    end*/
+    X_read_addr_2 = (r_counter + i_counter) * C + (c_counter + 2 + j_counter);
+    W_read_addr_2 = i_counter * K + j_counter;
 
-    //if (c_counter + 3 < C_out) begin
-        X_read_addr_3 = (r_counter + i_counter) * C + (c_counter + 3 + j_counter);
-        W_read_addr_3 = i_counter * K + j_counter;
-    /*end else begin
-        X_read_addr_3 = 0;
-        W_read_addr_3 = 0;
-    end*/
-    
+
+    X_read_addr_3 = (r_counter + i_counter) * C + (c_counter + 3 + j_counter);
+    W_read_addr_3 = i_counter * K + j_counter;
 end
 
 // determine # of valid outputs this iteration
