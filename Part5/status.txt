@@ -1,1 +1,2 @@
-
+Our optimized design was fully functional. The counters in the top level were set to read the proper addresses from the input memory module and the MAC addresses were set to forward the 
+corresponding data through each pipeline instantiation.
