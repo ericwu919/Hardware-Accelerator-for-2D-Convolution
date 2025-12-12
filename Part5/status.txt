@@ -2,4 +2,4 @@ Our optimized design was fully functional. The counters in the top level were se
 also set to forward the corresponding data through each pipeline instantiation.
 
 We synthesized our optimized design with the same parameter values as our unoptimized design: INW=12, R=9, C=8, MAXK=5; INW=18, R=9, C=8, MAXK=5; INW=24, R=16, C=17, MAXK=9. 
-Our results showed that the designs had a faster throughput and a lower average delay time, but necessitated a higher power consumption and greater area.
+Our results showed that the optimized designs had a faster throughput and a lower average delay time, but necessitated a higher power consumption and greater area.
